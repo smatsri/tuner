@@ -59,32 +59,45 @@ class AudioVisualizer {
     this.analyser.getByteFrequencyData(frequencyData);
 
     const sampleRate = this.audioContext.sampleRate;
-    let maxIndex = 0;
-    let maxValue = 0;
+    let peaks = [];
 
     // Focus on lower frequencies (adjust range for guitar strings)
-    // Start from index 1 to avoid DC offset at index 0
     const minFreq = 70; // Just below low E (82.41 Hz)
     const maxFreq = 350; // Just above high E (329.63 Hz)
     const startBin = Math.floor((minFreq * this.analyser.fftSize) / sampleRate);
     const endBin = Math.floor((maxFreq * this.analyser.fftSize) / sampleRate);
 
-    // Find peak frequency within guitar frequency range
-    for (let i = startBin; i < endBin; i++) {
-      if (frequencyData[i] > maxValue) {
-        maxValue = frequencyData[i];
-        maxIndex = i;
+    // Find multiple peaks
+    for (let i = startBin + 1; i < endBin - 1; i++) {
+      if (
+        frequencyData[i] > frequencyData[i - 1] &&
+        frequencyData[i] > frequencyData[i + 1] &&
+        frequencyData[i] > 128
+      ) {
+        // Amplitude threshold
+        peaks.push({
+          index: i,
+          value: frequencyData[i],
+        });
       }
     }
 
-    // Ignore very quiet sounds
-    if (maxValue < 128) {
-      // You might need to adjust this threshold
-      return 0;
-    }
+    // Sort peaks by amplitude
+    peaks.sort((a, b) => b.value - a.value);
 
-    // Convert index to frequency
-    return (maxIndex * sampleRate) / this.analyser.fftSize;
+    // If no peaks found
+    if (peaks.length === 0) return 0;
+
+    // Get the frequency of the strongest peak
+    const frequency = (peaks[0].index * sampleRate) / this.analyser.fftSize;
+
+    // Store all detected peaks for debugging
+    this.lastPeaks = peaks.slice(0, 3).map((peak) => ({
+      frequency: (peak.index * sampleRate) / this.analyser.fftSize,
+      amplitude: peak.value,
+    }));
+
+    return frequency;
   }
 
   // Add method to check if note is in tune
@@ -159,6 +172,21 @@ class AudioVisualizer {
           10,
           60
         );
+
+        // Debug information - show top 3 detected frequencies
+        ctx.fillStyle = "black";
+        ctx.font = "16px Arial";
+        if (this.lastPeaks) {
+          this.lastPeaks.forEach((peak, i) => {
+            ctx.fillText(
+              `Peak ${i + 1}: ${Math.round(peak.frequency)}Hz (${
+                peak.amplitude
+              })`,
+              10,
+              100 + i * 20
+            );
+          });
+        }
       } else {
         ctx.fillStyle = "black";
         ctx.font = "24px Arial";
