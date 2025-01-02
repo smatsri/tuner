@@ -218,4 +218,38 @@ class AudioVisualizer {
       difference: smallestDifference,
     };
   }
+
+  async loadAudioFile(file) {
+    await this.init();
+    const audioUrl = URL.createObjectURL(file);
+
+    return new Promise((resolve, reject) => {
+      const audio = new Audio();
+
+      audio.addEventListener("canplaythrough", () => {
+        if (this.currentAudio) {
+          // Disconnect old audio source if it exists
+          this.currentAudio.pause();
+        }
+        const source = this.audioContext.createMediaElementSource(audio);
+        source.connect(this.analyser);
+        this.analyser.connect(this.audioContext.destination);
+        this.currentAudio = audio;
+        resolve(audio);
+      });
+
+      audio.addEventListener("error", (e) => {
+        URL.revokeObjectURL(audioUrl);
+        reject(new Error(`Failed to load audio: ${e.message}`));
+      });
+
+      // Clean up the object URL when we're done with it
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      audio.src = audioUrl;
+      audio.load();
+    });
+  }
 }

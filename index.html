@@ -7,6 +7,10 @@
   </head>
   <body>
     <canvas id="visualizer" width="800" height="200"></canvas>
+    <div id="fileInputContainer">
+      <input type="file" id="audioFileInput" accept="audio/*" />
+      <button id="loadFileButton">Load Audio File</button>
+    </div>
     <div id="noteButtons"></div>
 
     <script src="./scripts/audio-visualizer.js"></script>
@@ -14,6 +18,25 @@
       async function init() {
         const visualizer = new AudioVisualizer();
         const buttonContainer = document.getElementById("noteButtons");
+
+        const audioFileInput = document.getElementById("audioFileInput");
+        const loadFileButton = document.getElementById("loadFileButton");
+
+        loadFileButton.onclick = async () => {
+          const file = audioFileInput.files[0];
+          if (file) {
+            if (visualizer.currentAudio) {
+              visualizer.currentAudio.pause();
+              visualizer.currentAudio.currentTime = 0;
+            }
+            try {
+              const audio = await visualizer.loadAudioFile(file);
+              audio.play();
+            } catch (error) {
+              console.error("Failed to load audio file:", error);
+            }
+          }
+        };
 
         // Create buttons for each note
         for (const [note, data] of Object.entries(visualizer.guitarNotes)) {
