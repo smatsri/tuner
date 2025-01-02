@@ -27,9 +27,9 @@ class AudioVisualizer {
 
       // Configure analyser
       this.analyser.fftSize = this.fftSize;
-      this.analyser.minDecibels = -100;
-      this.analyser.maxDecibels = -30;
-      this.analyser.smoothingTimeConstant = 0.8;
+      this.analyser.minDecibels = -90;
+      this.analyser.maxDecibels = -20;
+      this.analyser.smoothingTimeConstant = 0.85;
 
       this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
       this.isInitialized = true;
@@ -154,20 +154,22 @@ class AudioVisualizer {
     const sampleRate = this.audioContext.sampleRate;
     let peaks = [];
 
-    // Focus on lower frequencies (adjust range for guitar strings)
-    const minFreq = 70; // Just below low E (82.41 Hz)
-    const maxFreq = 350; // Just above high E (329.63 Hz)
+    // Adjusted frequency range
+    const minFreq = 60;
+    const maxFreq = 350;
     const startBin = Math.floor((minFreq * this.analyser.fftSize) / sampleRate);
     const endBin = Math.floor((maxFreq * this.analyser.fftSize) / sampleRate);
 
-    // Find multiple peaks
-    for (let i = startBin + 1; i < endBin - 1; i++) {
+    // Enhanced peak detection
+    for (let i = startBin + 2; i < endBin - 2; i++) {
+      // Check for wider peaks (better for low frequencies)
       if (
         frequencyData[i] > frequencyData[i - 1] &&
+        frequencyData[i] > frequencyData[i - 2] &&
         frequencyData[i] > frequencyData[i + 1] &&
-        frequencyData[i] > 128
+        frequencyData[i] > frequencyData[i + 2] &&
+        frequencyData[i] > 120
       ) {
-        // Amplitude threshold
         peaks.push({
           index: i,
           value: frequencyData[i],
