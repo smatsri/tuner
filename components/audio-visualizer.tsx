@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from "react";
 
 interface GuitarNote {
   freq: number;
@@ -27,10 +27,10 @@ const AudioVisualizer: React.FC = () => {
   const dataArrayRef = useRef<Uint8Array | null>(null);
   const lastPeaksRef = useRef<Peak[] | null>(null);
   const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
-  
+
   const FFT_SIZE = 32768;
   const TUNE_TOLERANCE = 2;
-  
+
   const GUITAR_NOTES: Record<string, GuitarNote> = {
     E2: { freq: 82.41, file: "./audio/e2.mp3" },
     A2: { freq: 110.0, file: "./audio/a2.mp3" },
@@ -93,7 +93,7 @@ const AudioVisualizer: React.FC = () => {
 
     const frequency = (peaks[0].index * sampleRate) / analyser.fftSize;
 
-    lastPeaksRef.current = peaks.slice(0, 3).map(peak => ({
+    lastPeaksRef.current = peaks.slice(0, 3).map((peak) => ({
       frequency: (peak.index * sampleRate) / analyser.fftSize,
       amplitude: peak.value,
     }));
@@ -113,7 +113,13 @@ const AudioVisualizer: React.FC = () => {
       }
     }
 
-    if (!closestNote) return { note: null, inTune: false, needsHigher: false, difference: Infinity };
+    if (!closestNote)
+      return {
+        note: null,
+        inTune: false,
+        needsHigher: false,
+        difference: Infinity,
+      };
 
     const inTune = smallestDifference <= TUNE_TOLERANCE;
     const needsHigher = frequency < GUITAR_NOTES[closestNote].freq;
@@ -139,10 +145,11 @@ const AudioVisualizer: React.FC = () => {
           if (sourceNodeRef.current) {
             sourceNodeRef.current.disconnect();
           }
-          
-          const source = audioContextRef.current.createMediaElementSource(audio);
+
+          const source =
+            audioContextRef.current.createMediaElementSource(audio);
           sourceNodeRef.current = source;
-          
+
           source.connect(analyserRef.current);
           analyserRef.current.connect(audioContextRef.current.destination);
           currentAudioRef.current = audio;
@@ -151,7 +158,13 @@ const AudioVisualizer: React.FC = () => {
       });
 
       audio.addEventListener("error", (e) => {
-        reject(new Error(`Failed to load audio: ${e instanceof ErrorEvent ? e.message : 'Unknown error'}`));
+        reject(
+          new Error(
+            `Failed to load audio: ${
+              e instanceof ErrorEvent ? e.message : "Unknown error"
+            }`
+          )
+        );
       });
 
       audio.src = audioUrl;
@@ -159,23 +172,26 @@ const AudioVisualizer: React.FC = () => {
     });
   };
 
-  const handleFileChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleFileChange = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-    if (currentAudioRef.current) {
-      currentAudioRef.current.pause();
-      currentAudioRef.current.currentTime = 0;
-    }
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+        currentAudioRef.current.currentTime = 0;
+      }
 
-    try {
-      const audioUrl = URL.createObjectURL(file);
-      const audio = await loadAudio(audioUrl);
-      audio.play();
-    } catch (error) {
-      console.error("Failed to load audio file:", error);
-    }
-  }, []);
+      try {
+        const audioUrl = URL.createObjectURL(file);
+        const audio = await loadAudio(audioUrl);
+        audio.play();
+      } catch (error) {
+        console.error("Failed to load audio file:", error);
+      }
+    },
+    []
+  );
 
   const handleNoteClick = useCallback(async (note: string, file: string) => {
     if (currentAudioRef.current) {
@@ -192,7 +208,9 @@ const AudioVisualizer: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const canvas = document.getElementById('visualizer-canvas') as HTMLCanvasElement;
+    const canvas = document.getElementById(
+      "visualizer-canvas"
+    ) as HTMLCanvasElement;
     if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
@@ -285,12 +303,8 @@ const AudioVisualizer: React.FC = () => {
 
   return (
     <div className="audio-visualizer">
-      <canvas 
-        id="visualizer-canvas" 
-        width={800} 
-        height={400}
-      />
-      
+      <canvas id="visualizer-canvas" width={800} height={400} />
+
       {/* File Input Section */}
       <div className="file-input-container">
         <input
@@ -358,4 +372,4 @@ const AudioVisualizer: React.FC = () => {
   );
 };
 
-export default AudioVisualizer; 
+export default AudioVisualizer;
