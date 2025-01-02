@@ -1,22 +1,34 @@
 class AudioVisualizer {
   constructor() {
-    this.audioContext = new (window.AudioContext ||
-      window.webkitAudioContext)();
+    /** @type {AudioContext} */
+    this.audioContext = new AudioContext();
+    /** @type {AnalyserNode} */
     this.analyser = this.audioContext.createAnalyser();
     this.analyser.fftSize = 2048;
+    /** @type {Uint8Array} */
     this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
   }
 
   async loadVideo(videoUrl) {
-    const video = document.createElement("video");
-    video.src = videoUrl;
+    return new Promise((resolve, reject) => {
+      const video = document.createElement("video");
 
-    // Create audio source from video
-    const source = this.audioContext.createMediaElementSource(video);
-    source.connect(this.analyser);
-    this.analyser.connect(this.audioContext.destination);
+      // Add event listeners for loading states
+      video.addEventListener("loadeddata", () => {
+        // Create audio source from video only after data is loaded
+        const source = this.audioContext.createMediaElementSource(video);
+        source.connect(this.analyser);
+        this.analyser.connect(this.audioContext.destination);
+        resolve(video);
+      });
 
-    return video;
+      video.addEventListener("error", (e) => {
+        reject(new Error(`Failed to load video: ${e.message}`));
+      });
+
+      video.src = videoUrl;
+      video.load(); // Explicitly start loading the video
+    });
   }
 
   draw(canvas) {

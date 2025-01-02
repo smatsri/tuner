@@ -9,10 +9,11 @@
     <canvas id="visualizer" width="800" height="200"></canvas>
     <button id="playBtn">Play/Pause</button>
 
+    <script src="./scripts/audio-visualizer.js"></script>
     <script>
       async function init() {
         const visualizer = new AudioVisualizer();
-        const video = await visualizer.loadVideo("path/to/your.mp4");
+        const video = await visualizer.loadVideo("./audio/standard-tuning.mp4");
         document.body.appendChild(video);
         video.style.display = "none"; // Hide video if you only want audio
 
