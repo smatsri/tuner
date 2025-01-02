@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Audio Visualizer</title>
+  </head>
+  <body>
+    <canvas id="visualizer" width="800" height="200"></canvas>
+    <button id="playBtn">Play/Pause</button>
+
+    <script>
+      async function init() {
+        const visualizer = new AudioVisualizer();
+        const video = await visualizer.loadVideo("path/to/your.mp4");
+        document.body.appendChild(video);
+        video.style.display = "none"; // Hide video if you only want audio
+
+        const canvas = document.getElementById("visualizer");
+        visualizer.draw(canvas);
+
+        // Add play/pause control
+        document.getElementById("playBtn").onclick = () => {
+          if (video.paused) {
+            video.play();
+          } else {
+            video.pause();
+          }
+        };
+      }
+
+      init();
+    </script>
+  </body>
+</html>
