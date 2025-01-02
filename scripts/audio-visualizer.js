@@ -1,54 +1,147 @@
 class AudioVisualizer {
   constructor() {
-    // Don't create AudioContext until user interacts
     this.audioContext = null;
     this.analyser = null;
     this.dataArray = null;
+    this.currentAudio = null;
+    this.isInitialized = false;
+    this.fftSize = 32768;
 
-    // Add standard guitar frequencies
     this.guitarNotes = {
-      E2: 82.41,
-      A2: 110.0,
-      D3: 146.83,
-      G3: 196.0,
-      B3: 246.94,
-      E4: 329.63,
+      E2: { freq: 82.41, file: "./audio/e2.mp3" },
+      A2: { freq: 110.0, file: "./audio/a2.mp3" },
+      D3: { freq: 146.83, file: "./audio/d3.mp3" },
+      G3: { freq: 196.0, file: "./audio/g3.mp3" },
+      B3: { freq: 246.94, file: "./audio/b3.mp3" },
+      E4: { freq: 329.63, file: "./audio/e4.mp3" },
     };
 
-    // Tolerance in Hz for considering a note in tune (adjust as needed)
     this.tuneTolerance = 2;
   }
 
   async init() {
     if (!this.audioContext) {
-      this.audioContext = new AudioContext();
+      this.audioContext = new (window.AudioContext ||
+        window.webkitAudioContext)();
       this.analyser = this.audioContext.createAnalyser();
-      this.analyser.fftSize = 2048;
+
+      // Configure analyser
+      this.analyser.fftSize = this.fftSize;
+      this.analyser.minDecibels = -100;
+      this.analyser.maxDecibels = -30;
+      this.analyser.smoothingTimeConstant = 0.8;
+
       this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+      this.isInitialized = true;
     }
-    return this.audioContext.resume();
   }
 
-  async loadVideo(videoUrl) {
-    await this.init(); // Ensure audio context is initialized
-    return new Promise((resolve, reject) => {
-      const video = document.createElement("video");
+  draw(canvas) {
+    const ctx = canvas.getContext("2d");
+    const width = canvas.width;
+    const height = canvas.height;
 
-      // Add event listeners for loading states
-      video.addEventListener("loadeddata", () => {
-        // Create audio source from video only after data is loaded
-        const source = this.audioContext.createMediaElementSource(video);
+    const draw = () => {
+      requestAnimationFrame(draw);
+
+      // Only process audio if initialized and we have an audio source
+      if (
+        this.isInitialized &&
+        this.currentAudio &&
+        !this.currentAudio.paused
+      ) {
+        const frequency = this.findFundamentalFrequency();
+        const tuning = this.checkTuning(frequency);
+
+        // Clear canvas
+        ctx.fillStyle = "rgb(200, 200, 200)";
+        ctx.fillRect(0, 0, width, height);
+
+        // Draw tuning information
+        if (frequency > 0) {
+          ctx.fillStyle = tuning.inTune ? "green" : "red";
+          ctx.font = "24px Arial";
+          ctx.fillText(
+            `Note: ${tuning.note} (${Math.round(frequency)}Hz)`,
+            10,
+            30
+          );
+
+          // Show detailed peak information
+          ctx.fillStyle = "black";
+          ctx.font = "14px Arial";
+          if (this.lastPeaks && this.lastPeaks.length > 0) {
+            ctx.fillText("Detected Peaks:", 10, 80);
+            this.lastPeaks.forEach((peak, i) => {
+              ctx.fillText(
+                `Peak ${i + 1}: ${peak.frequency.toFixed(1)}Hz (amp: ${
+                  peak.amplitude
+                })`,
+                10,
+                100 + i * 20
+              );
+            });
+
+            // Show closest guitar notes
+            ctx.fillText("Nearest Notes:", 10, 200);
+            Object.entries(this.guitarNotes)
+              .sort(
+                (a, b) =>
+                  Math.abs(a[1].freq - frequency) -
+                  Math.abs(b[1].freq - frequency)
+              )
+              .slice(0, 3)
+              .forEach((entry, i) => {
+                const [note, data] = entry;
+                const diff = Math.abs(data.freq - frequency);
+                ctx.fillText(
+                  `${note}: ${data.freq}Hz (diff: ${diff.toFixed(1)}Hz)`,
+                  10,
+                  220 + i * 20
+                );
+              });
+          }
+        } else {
+          ctx.fillStyle = "black";
+          ctx.font = "24px Arial";
+          ctx.fillText("Waiting for audio...", 10, 30);
+        }
+      } else {
+        // Clear canvas and show waiting message
+        ctx.fillStyle = "rgb(200, 200, 200)";
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = "black";
+        ctx.font = "24px Arial";
+        ctx.fillText("Click a note button to begin", 10, 30);
+      }
+    };
+
+    draw();
+  }
+
+  async loadAudio(audioUrl) {
+    await this.init();
+    return new Promise((resolve, reject) => {
+      const audio = new Audio();
+
+      audio.addEventListener("canplaythrough", () => {
+        if (this.currentAudio) {
+          // Disconnect old audio source if it exists
+          this.currentAudio.pause();
+        }
+        const source = this.audioContext.createMediaElementSource(audio);
         source.connect(this.analyser);
         this.analyser.connect(this.audioContext.destination);
-        resolve(video);
+        this.currentAudio = audio;
+        resolve(audio);
       });
 
-      video.addEventListener("error", (e) => {
-        reject(new Error(`Failed to load video: ${e.message}`));
+      audio.addEventListener("error", (e) => {
+        reject(new Error(`Failed to load audio: ${e.message}`));
       });
 
-      video.src = videoUrl;
-      video.load(); // Explicitly start loading the video
+      audio.src = audioUrl;
+      audio.load();
     });
   }
 
@@ -106,7 +199,7 @@ class AudioVisualizer {
     let smallestDifference = Infinity;
 
     for (const [note, noteFreq] of Object.entries(this.guitarNotes)) {
-      const difference = Math.abs(frequency - noteFreq);
+      const difference = Math.abs(frequency - noteFreq.freq);
       if (difference < smallestDifference) {
         smallestDifference = difference;
         closestNote = note;
@@ -114,7 +207,7 @@ class AudioVisualizer {
     }
 
     const inTune = smallestDifference <= this.tuneTolerance;
-    const needsHigher = frequency < this.guitarNotes[closestNote];
+    const needsHigher = frequency < this.guitarNotes[closestNote].freq;
 
     return {
       note: closestNote,
@@ -122,105 +215,5 @@ class AudioVisualizer {
       needsHigher,
       difference: smallestDifference,
     };
-  }
-
-  draw(canvas) {
-    const ctx = canvas.getContext("2d");
-    const width = canvas.width;
-    const height = canvas.height;
-
-    // Store previous data points for scrolling effect
-    let dataHistory = [];
-    const historyLength = 100; // Number of frames to show
-
-    const draw = () => {
-      requestAnimationFrame(draw);
-
-      // Get current audio data
-      this.analyser.getByteTimeDomainData(this.dataArray);
-
-      // Get frequency and tuning information
-      const frequency = this.findFundamentalFrequency();
-      const tuning = this.checkTuning(frequency);
-
-      // Add current data to history
-      dataHistory.push([...this.dataArray]);
-      if (dataHistory.length > historyLength) {
-        dataHistory.shift();
-      }
-
-      // Clear canvas
-      ctx.fillStyle = "rgb(200, 200, 200)";
-      ctx.fillRect(0, 0, width, height);
-
-      // Draw tuning indicator
-      if (frequency > 0) {
-        // Only show tuning info if we detect a frequency
-        ctx.fillStyle = tuning.inTune ? "green" : "red";
-        ctx.font = "24px Arial";
-        ctx.fillText(
-          `Note: ${tuning.note} (${Math.round(frequency)}Hz)`,
-          10,
-          30
-        );
-        ctx.fillText(
-          tuning.inTune
-            ? "In Tune!"
-            : tuning.needsHigher
-            ? "Tune Higher ↑"
-            : "Tune Lower ↓",
-          10,
-          60
-        );
-
-        // Debug information - show top 3 detected frequencies
-        ctx.fillStyle = "black";
-        ctx.font = "16px Arial";
-        if (this.lastPeaks) {
-          this.lastPeaks.forEach((peak, i) => {
-            ctx.fillText(
-              `Peak ${i + 1}: ${Math.round(peak.frequency)}Hz (${
-                peak.amplitude
-              })`,
-              10,
-              100 + i * 20
-            );
-          });
-        }
-      } else {
-        ctx.fillStyle = "black";
-        ctx.font = "24px Arial";
-        ctx.fillText("Waiting for input...", 10, 30);
-      }
-
-      // Draw each frame in history
-      const frameWidth = width / historyLength;
-
-      dataHistory.forEach((frame, frameIndex) => {
-        ctx.beginPath();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = `rgba(0, 0, 0, ${frameIndex / historyLength})`;
-
-        const sliceWidth = frameWidth / frame.length;
-        let x = frameIndex * frameWidth;
-
-        for (let i = 0; i < frame.length; i++) {
-          const v = frame[i] / 128.0;
-          const y = (v * height) / 2;
-
-          if (i === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
-          }
-
-          x += sliceWidth;
-        }
-
-        ctx.stroke();
-      });
-    };
-
-    draw();
   }
 }

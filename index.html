@@ -7,39 +7,35 @@
   </head>
   <body>
     <canvas id="visualizer" width="800" height="200"></canvas>
-    <button id="playBtn">Play/Pause</button>
+    <div id="noteButtons"></div>
 
     <script src="./scripts/audio-visualizer.js"></script>
     <script>
       async function init() {
         const visualizer = new AudioVisualizer();
-        const playBtn = document.getElementById("playBtn");
-        let video;
+        const buttonContainer = document.getElementById("noteButtons");
 
-        // Wait for user interaction to initialize audio
-        playBtn.onclick = async () => {
-          if (!video) {
-            // First click - initialize everything
-            try {
-              video = await visualizer.loadVideo("./audio/standard-tuning.mp4");
-              document.body.appendChild(video);
-              video.style.display = "none";
-
-              const canvas = document.getElementById("visualizer");
-              visualizer.draw(canvas);
-            } catch (error) {
-              console.error("Failed to initialize audio visualizer:", error);
-              return;
+        // Create buttons for each note
+        for (const [note, data] of Object.entries(visualizer.guitarNotes)) {
+          const button = document.createElement("button");
+          button.textContent = note;
+          button.onclick = async () => {
+            if (visualizer.currentAudio) {
+              visualizer.currentAudio.pause();
+              visualizer.currentAudio.currentTime = 0;
             }
-          }
+            try {
+              const audio = await visualizer.loadAudio(data.file);
+              audio.play();
+            } catch (error) {
+              console.error(`Failed to play ${note}:`, error);
+            }
+          };
+          buttonContainer.appendChild(button);
+        }
 
-          // Toggle play/pause
-          if (video.paused) {
-            video.play();
-          } else {
-            video.pause();
-          }
-        };
+        const canvas = document.getElementById("visualizer");
+        visualizer.draw(canvas);
       }
 
       init();
