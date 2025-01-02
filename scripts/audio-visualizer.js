@@ -4,6 +4,19 @@ class AudioVisualizer {
     this.audioContext = null;
     this.analyser = null;
     this.dataArray = null;
+
+    // Add standard guitar frequencies
+    this.guitarNotes = {
+      E2: 82.41,
+      A2: 110.0,
+      D3: 146.83,
+      G3: 196.0,
+      B3: 246.94,
+      E4: 329.63,
+    };
+
+    // Tolerance in Hz for considering a note in tune (adjust as needed)
+    this.tuneTolerance = 2;
   }
 
   async init() {
@@ -39,6 +52,65 @@ class AudioVisualizer {
     });
   }
 
+  // Add method to find fundamental frequency
+  findFundamentalFrequency() {
+    const bufferLength = this.analyser.frequencyBinCount;
+    const frequencyData = new Uint8Array(bufferLength);
+    this.analyser.getByteFrequencyData(frequencyData);
+
+    const sampleRate = this.audioContext.sampleRate;
+    let maxIndex = 0;
+    let maxValue = 0;
+
+    // Focus on lower frequencies (adjust range for guitar strings)
+    // Start from index 1 to avoid DC offset at index 0
+    const minFreq = 70; // Just below low E (82.41 Hz)
+    const maxFreq = 350; // Just above high E (329.63 Hz)
+    const startBin = Math.floor((minFreq * this.analyser.fftSize) / sampleRate);
+    const endBin = Math.floor((maxFreq * this.analyser.fftSize) / sampleRate);
+
+    // Find peak frequency within guitar frequency range
+    for (let i = startBin; i < endBin; i++) {
+      if (frequencyData[i] > maxValue) {
+        maxValue = frequencyData[i];
+        maxIndex = i;
+      }
+    }
+
+    // Ignore very quiet sounds
+    if (maxValue < 128) {
+      // You might need to adjust this threshold
+      return 0;
+    }
+
+    // Convert index to frequency
+    return (maxIndex * sampleRate) / this.analyser.fftSize;
+  }
+
+  // Add method to check if note is in tune
+  checkTuning(frequency) {
+    let closestNote = null;
+    let smallestDifference = Infinity;
+
+    for (const [note, noteFreq] of Object.entries(this.guitarNotes)) {
+      const difference = Math.abs(frequency - noteFreq);
+      if (difference < smallestDifference) {
+        smallestDifference = difference;
+        closestNote = note;
+      }
+    }
+
+    const inTune = smallestDifference <= this.tuneTolerance;
+    const needsHigher = frequency < this.guitarNotes[closestNote];
+
+    return {
+      note: closestNote,
+      inTune,
+      needsHigher,
+      difference: smallestDifference,
+    };
+  }
+
   draw(canvas) {
     const ctx = canvas.getContext("2d");
     const width = canvas.width;
@@ -54,15 +126,44 @@ class AudioVisualizer {
       // Get current audio data
       this.analyser.getByteTimeDomainData(this.dataArray);
 
+      // Get frequency and tuning information
+      const frequency = this.findFundamentalFrequency();
+      const tuning = this.checkTuning(frequency);
+
       // Add current data to history
       dataHistory.push([...this.dataArray]);
       if (dataHistory.length > historyLength) {
-        dataHistory.shift(); // Remove oldest data
+        dataHistory.shift();
       }
 
       // Clear canvas
       ctx.fillStyle = "rgb(200, 200, 200)";
       ctx.fillRect(0, 0, width, height);
+
+      // Draw tuning indicator
+      if (frequency > 0) {
+        // Only show tuning info if we detect a frequency
+        ctx.fillStyle = tuning.inTune ? "green" : "red";
+        ctx.font = "24px Arial";
+        ctx.fillText(
+          `Note: ${tuning.note} (${Math.round(frequency)}Hz)`,
+          10,
+          30
+        );
+        ctx.fillText(
+          tuning.inTune
+            ? "In Tune!"
+            : tuning.needsHigher
+            ? "Tune Higher ↑"
+            : "Tune Lower ↓",
+          10,
+          60
+        );
+      } else {
+        ctx.fillStyle = "black";
+        ctx.font = "24px Arial";
+        ctx.fillText("Waiting for input...", 10, 30);
+      }
 
       // Draw each frame in history
       const frameWidth = width / historyLength;
