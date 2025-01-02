@@ -226,9 +226,11 @@ class AudioVisualizer {
     return new Promise((resolve, reject) => {
       const audio = new Audio();
 
+      // Add loop property
+      audio.loop = true;
+
       audio.addEventListener("canplaythrough", () => {
         if (this.currentAudio) {
-          // Disconnect old audio source if it exists
           this.currentAudio.pause();
         }
         const source = this.audioContext.createMediaElementSource(audio);
@@ -243,7 +245,6 @@ class AudioVisualizer {
         reject(new Error(`Failed to load audio: ${e.message}`));
       });
 
-      // Clean up the object URL when we're done with it
       audio.onended = () => {
         URL.revokeObjectURL(audioUrl);
       };
