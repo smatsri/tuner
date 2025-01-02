@@ -13,15 +13,27 @@
     <script>
       async function init() {
         const visualizer = new AudioVisualizer();
-        const video = await visualizer.loadVideo("./audio/standard-tuning.mp4");
-        document.body.appendChild(video);
-        video.style.display = "none"; // Hide video if you only want audio
+        const playBtn = document.getElementById("playBtn");
+        let video;
 
-        const canvas = document.getElementById("visualizer");
-        visualizer.draw(canvas);
+        // Wait for user interaction to initialize audio
+        playBtn.onclick = async () => {
+          if (!video) {
+            // First click - initialize everything
+            try {
+              video = await visualizer.loadVideo("./audio/standard-tuning.mp4");
+              document.body.appendChild(video);
+              video.style.display = "none";
 
-        // Add play/pause control
-        document.getElementById("playBtn").onclick = () => {
+              const canvas = document.getElementById("visualizer");
+              visualizer.draw(canvas);
+            } catch (error) {
+              console.error("Failed to initialize audio visualizer:", error);
+              return;
+            }
+          }
+
+          // Toggle play/pause
           if (video.paused) {
             video.play();
           } else {
