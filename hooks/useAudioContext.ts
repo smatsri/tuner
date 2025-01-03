@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export interface AudioContextState {
   audioContext: AudioContext | null;
@@ -10,13 +10,16 @@ export interface AudioContextState {
 
 export const useAudioContext = (fftSize: number = 32768) => {
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [, setAudioState] = useState<number>(0);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
 
-  const init = async (): Promise<void> => {
+
+  const init = () => {
     if (!audioContextRef.current) {
+
       const ctx = new AudioContext();
       const analyser = ctx.createAnalyser();
 
@@ -27,20 +30,24 @@ export const useAudioContext = (fftSize: number = 32768) => {
 
       audioContextRef.current = ctx;
       analyserRef.current = analyser;
+
       setIsInitialized(true);
     }
   };
 
   const loadAudio = async (audioUrl: string): Promise<HTMLAudioElement> => {
-    await init();
+    init();
     return new Promise((resolve, reject) => {
+
       const audio = new Audio();
 
       audio.addEventListener("canplaythrough", () => {
         if (currentAudioRef.current) {
+
           currentAudioRef.current.pause();
         }
         if (audioContextRef.current && analyserRef.current) {
+
           if (sourceNodeRef.current) {
             sourceNodeRef.current.disconnect();
           }
@@ -51,6 +58,8 @@ export const useAudioContext = (fftSize: number = 32768) => {
           source.connect(analyserRef.current);
           analyserRef.current.connect(audioContextRef.current.destination);
           currentAudioRef.current = audio;
+
+          setAudioState(prev => prev + 1);
           resolve(audio);
         }
       });
@@ -63,6 +72,7 @@ export const useAudioContext = (fftSize: number = 32768) => {
       audio.load();
     });
   };
+
 
   return {
     isInitialized,
