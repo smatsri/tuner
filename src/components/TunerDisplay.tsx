@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { Stage, Layer, Text, Rect } from "react-konva";
 import { Peak } from "../utils/frequencyAnalysis";
 import { TuningResult } from "../utils/tuner";
 
@@ -17,100 +17,110 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
   tuningResult,
   lastPeaks,
 }) => {
-  useEffect(() => {
-    const canvas = document.getElementById(
-      "visualizer-canvas"
-    ) as HTMLCanvasElement;
-    if (!canvas) return;
+  const width = 800;
+  const height = 400;
 
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+  // Guitar notes for reference
+  const guitarNotes = {
+    E2: 82.41,
+    A2: 110.0,
+    D3: 146.83,
+    G3: 196.0,
+    B3: 246.94,
+    E4: 329.63,
+  };
 
-    const width = canvas.width;
-    const height = canvas.height;
+  const nearestNotes = Object.entries(guitarNotes)
+    .sort((a, b) => Math.abs(a[1] - frequency) - Math.abs(b[1] - frequency))
+    .slice(0, 3);
 
-    let animationFrameId: number;
+  return (
+    <Stage width={width} height={height}>
+      <Layer>
+        {/* Background */}
+        <Rect width={width} height={height} fill="rgb(200, 200, 200)" />
 
-    const draw = () => {
-      animationFrameId = requestAnimationFrame(draw);
+        {isInitialized && currentAudio && !currentAudio.paused ? (
+          <>
+            {frequency > 0 ? (
+              <>
+                {/* Main frequency display */}
+                <Text
+                  text={`Note: ${tuningResult.note} (${Math.round(
+                    frequency
+                  )}Hz)`}
+                  x={10}
+                  y={10}
+                  fontSize={24}
+                  fill={tuningResult.inTune ? "green" : "red"}
+                />
 
-      if (isInitialized && currentAudio && !currentAudio.paused) {
-        // Clear canvas
-        ctx.fillStyle = "rgb(200, 200, 200)";
-        ctx.fillRect(0, 0, width, height);
+                {/* Peak information */}
+                {lastPeaks && lastPeaks.length > 0 && (
+                  <>
+                    <Text
+                      text="Detected Peaks:"
+                      x={10}
+                      y={60}
+                      fontSize={14}
+                      fill="black"
+                    />
+                    {lastPeaks.map((peak, i) => (
+                      <Text
+                        key={`peak-${i}`}
+                        text={`Peak ${i + 1}: ${peak.frequency.toFixed(
+                          1
+                        )}Hz (amp: ${peak.amplitude})`}
+                        x={10}
+                        y={80 + i * 20}
+                        fontSize={14}
+                        fill="black"
+                      />
+                    ))}
 
-        // Draw tuning information
-        if (frequency > 0) {
-          ctx.fillStyle = tuningResult.inTune ? "green" : "red";
-          ctx.font = "24px Arial";
-          ctx.fillText(
-            `Note: ${tuningResult.note} (${Math.round(frequency)}Hz)`,
-            10,
-            30
-          );
-
-          // Show detailed peak information
-          ctx.fillStyle = "black";
-          ctx.font = "14px Arial";
-          if (lastPeaks && lastPeaks.length > 0) {
-            ctx.fillText("Detected Peaks:", 10, 80);
-            lastPeaks.forEach((peak, i) => {
-              ctx.fillText(
-                `Peak ${i + 1}: ${peak.frequency.toFixed(1)}Hz (amp: ${
-                  peak.amplitude
-                })`,
-                10,
-                100 + i * 20
-              );
-            });
-
-            // Show closest guitar notes
-            const guitarNotes = {
-              E2: 82.41,
-              A2: 110.0,
-              D3: 146.83,
-              G3: 196.0,
-              B3: 246.94,
-              E4: 329.63,
-            };
-
-            ctx.fillText("Nearest Notes:", 10, 200);
-            Object.entries(guitarNotes)
-              .sort(
-                (a, b) =>
-                  Math.abs(a[1] - frequency) - Math.abs(b[1] - frequency)
-              )
-              .slice(0, 3)
-              .forEach((entry, i) => {
-                const [note, noteFreq] = entry;
-                const diff = Math.abs(noteFreq - frequency);
-                ctx.fillText(
-                  `${note}: ${noteFreq}Hz (diff: ${diff.toFixed(1)}Hz)`,
-                  10,
-                  220 + i * 20
-                );
-              });
-          }
-        } else {
-          ctx.fillStyle = "black";
-          ctx.font = "24px Arial";
-          ctx.fillText("Waiting for audio...", 10, 30);
-        }
-      } else {
-        ctx.fillStyle = "rgb(200, 200, 200)";
-        ctx.fillRect(0, 0, width, height);
-        ctx.fillStyle = "black";
-        ctx.font = "24px Arial";
-        ctx.fillText("Click a note button to begin", 10, 30);
-      }
-    };
-
-    draw();
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [frequency, isInitialized, currentAudio, tuningResult, lastPeaks]);
-
-  return <canvas id="visualizer-canvas" width={800} height={400} />;
+                    {/* Nearest notes */}
+                    <Text
+                      text="Nearest Notes:"
+                      x={10}
+                      y={180}
+                      fontSize={14}
+                      fill="black"
+                    />
+                    {nearestNotes.map(([note, noteFreq], i) => (
+                      <Text
+                        key={`note-${note}`}
+                        text={`${note}: ${noteFreq}Hz (diff: ${Math.abs(
+                          noteFreq - frequency
+                        ).toFixed(1)}Hz)`}
+                        x={10}
+                        y={200 + i * 20}
+                        fontSize={14}
+                        fill="black"
+                      />
+                    ))}
+                  </>
+                )}
+              </>
+            ) : (
+              <Text
+                text="Waiting for audio..."
+                x={10}
+                y={10}
+                fontSize={24}
+                fill="black"
+              />
+            )}
+          </>
+        ) : (
+          <Text
+            text="Click a note button to begin"
+            x={10}
+            y={10}
+            fontSize={24}
+            fill="black"
+          />
+        )}
+      </Layer>
+    </Stage>
+  );
 };
