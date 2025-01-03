@@ -12,7 +12,7 @@ const GuitarTuner: React.FC = () => {
   const { isInitialized, audioContext, analyser, currentAudio, loadAudio } =
     useAudioContext();
 
-  const { findFundamentalFrequency, lastPeaks } = useFrequencyAnalyzer(
+  const { findFundamentalFrequency } = useFrequencyAnalyzer(
     audioContext,
     analyser
   );
@@ -26,7 +26,8 @@ const GuitarTuner: React.FC = () => {
     const updateFrequency = () => {
       if (!isRunning) return;
 
-      const newFrequency = findFundamentalFrequency();
+      const [peaks, newFrequency] = findFundamentalFrequency();
+      console.log("peaks", peaks);
       if (newFrequency !== frequency) {
         setFrequency(newFrequency);
       }
@@ -98,7 +99,7 @@ const GuitarTuner: React.FC = () => {
         isInitialized={isInitialized}
         currentAudio={currentAudio}
         tuningResult={tuningResult}
-        lastPeaks={lastPeaks}
+        lastPeaks={null}
       />
 
       <AudioControls

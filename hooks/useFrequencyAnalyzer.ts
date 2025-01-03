@@ -6,10 +6,8 @@ export interface Peak {
 }
 
 export const useFrequencyAnalyzer = (audioContext: AudioContext | null, analyser: AnalyserNode | null) => {
-  const lastPeaksRef = useRef<Peak[] | null>(null);
-
-  const findFundamentalFrequency = (): number => {
-    if (!analyser || !audioContext) return 0;
+  const findFundamentalFrequency = (): [Peak[], number] => {
+    if (!analyser || !audioContext) return [[], 0];
 
     const bufferLength = analyser.frequencyBinCount;
     const frequencyData = new Uint8Array(bufferLength);
@@ -36,20 +34,19 @@ export const useFrequencyAnalyzer = (audioContext: AudioContext | null, analyser
     }
 
     peaks.sort((a, b) => b.value - a.value);
-    if (peaks.length === 0) return 0;
+    if (peaks.length === 0) return [[], 0];
 
     const frequency = (peaks[0].index * sampleRate) / analyser.fftSize;
 
-    lastPeaksRef.current = peaks.slice(0, 3).map((peak) => ({
+    const topPeaks = peaks.slice(0, 3).map((peak) => ({
       frequency: (peak.index * sampleRate) / analyser.fftSize,
       amplitude: peak.value,
     }));
 
-    return frequency;
+    return [topPeaks, frequency];
   };
 
   return {
     findFundamentalFrequency,
-    lastPeaks: lastPeaksRef.current,
   };
 }; 
