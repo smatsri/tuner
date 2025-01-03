@@ -5,7 +5,7 @@ import { useAudioContext } from "../hooks/useAudioContext";
 import { findFundamentalFrequency, Peak } from "../utils/frequencyAnalysis";
 import { TunerDisplay } from "./TunerDisplay";
 import { AudioControls } from "./AudioControls";
-import { checkTuning } from "@/utils/tuner";
+import { checkTuning } from "../utils/tuner";
 
 const GuitarTuner: React.FC = () => {
   const [frequency, setFrequency] = useState(0);
@@ -105,7 +105,7 @@ const GuitarTuner: React.FC = () => {
         onNoteClick={handleNoteClick}
       />
 
-      <style jsx>{`
+      <style>{`
         .guitar-tuner {
           display: flex;
           flex-direction: column;
