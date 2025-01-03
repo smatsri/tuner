@@ -1,11 +1,12 @@
 import { useEffect } from "react";
 import { Peak } from "../hooks/useFrequencyAnalyzer";
+import { TuningResult } from "@/hooks/useTuner";
 
 interface TunerDisplayProps {
   frequency: number;
   isInitialized: boolean;
   currentAudio: HTMLAudioElement | null;
-  tuningResult: any;
+  tuningResult: TuningResult;
   lastPeaks: Peak[] | null;
 }
 
