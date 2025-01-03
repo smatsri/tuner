@@ -3,17 +3,15 @@
 import { useCallback, useState, useEffect, useRef } from "react";
 import { useAudioContext } from "../hooks/useAudioContext";
 import { findFundamentalFrequency, Peak } from "../utils/frequencyAnalysis";
-import { useTuner } from "../hooks/useTuner";
 import { TunerDisplay } from "./TunerDisplay";
 import { AudioControls } from "./AudioControls";
+import { checkTuning } from "@/utils/tuner";
 
 const GuitarTuner: React.FC = () => {
   const [frequency, setFrequency] = useState(0);
   const peaksRef = useRef<Peak[]>([]);
   const { isInitialized, audioContext, analyser, currentAudio, loadAudio } =
     useAudioContext();
-
-  const { checkTuning } = useTuner();
 
   // Modified effect to handle frequency updates more reliably
   useEffect(() => {

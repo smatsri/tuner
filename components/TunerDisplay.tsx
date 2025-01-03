@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Peak } from "../utils/frequencyAnalysis";
-import { TuningResult } from "@/hooks/useTuner";
+import { TuningResult } from "@/utils/tuner";
 
 interface TunerDisplayProps {
   frequency: number;

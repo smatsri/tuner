@@ -1,4 +1,4 @@
-import { GUITAR_NOTES } from "@/hooks/useTuner";
+import { GUITAR_NOTES } from "@/utils/tuner";
 
 interface AudioControlsProps {
   onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
