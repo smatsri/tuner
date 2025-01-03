@@ -53,7 +53,43 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
           ctx.fillStyle = "black";
           ctx.font = "14px Arial";
           if (lastPeaks && lastPeaks.length > 0) {
-            // ... rest of the drawing logic ...
+            ctx.fillText("Detected Peaks:", 10, 80);
+            lastPeaks.forEach((peak, i) => {
+              ctx.fillText(
+                `Peak ${i + 1}: ${peak.frequency.toFixed(1)}Hz (amp: ${
+                  peak.amplitude
+                })`,
+                10,
+                100 + i * 20
+              );
+            });
+
+            // Show closest guitar notes
+            const guitarNotes = {
+              E2: 82.41,
+              A2: 110.0,
+              D3: 146.83,
+              G3: 196.0,
+              B3: 246.94,
+              E4: 329.63,
+            };
+
+            ctx.fillText("Nearest Notes:", 10, 200);
+            Object.entries(guitarNotes)
+              .sort(
+                (a, b) =>
+                  Math.abs(a[1] - frequency) - Math.abs(b[1] - frequency)
+              )
+              .slice(0, 3)
+              .forEach((entry, i) => {
+                const [note, noteFreq] = entry;
+                const diff = Math.abs(noteFreq - frequency);
+                ctx.fillText(
+                  `${note}: ${noteFreq}Hz (diff: ${diff.toFixed(1)}Hz)`,
+                  10,
+                  220 + i * 20
+                );
+              });
           }
         } else {
           ctx.fillStyle = "black";

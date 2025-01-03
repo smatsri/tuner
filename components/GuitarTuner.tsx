@@ -1,14 +1,15 @@
 "use client";
 
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { useAudioContext } from "../hooks/useAudioContext";
-import { useFrequencyAnalyzer } from "../hooks/useFrequencyAnalyzer";
+import { Peak, useFrequencyAnalyzer } from "../hooks/useFrequencyAnalyzer";
 import { useTuner } from "../hooks/useTuner";
 import { TunerDisplay } from "./TunerDisplay";
 import { AudioControls } from "./AudioControls";
 
 const GuitarTuner: React.FC = () => {
   const [frequency, setFrequency] = useState(0);
+  const peaksRef = useRef<Peak[]>([]);
   const { isInitialized, audioContext, analyser, currentAudio, loadAudio } =
     useAudioContext();
 
@@ -31,6 +32,7 @@ const GuitarTuner: React.FC = () => {
       if (newFrequency !== frequency) {
         setFrequency(newFrequency);
       }
+      peaksRef.current = peaks;
       animationFrameId = requestAnimationFrame(updateFrequency);
     };
 
@@ -99,7 +101,7 @@ const GuitarTuner: React.FC = () => {
         isInitialized={isInitialized}
         currentAudio={currentAudio}
         tuningResult={tuningResult}
-        lastPeaks={null}
+        lastPeaks={peaksRef.current}
       />
 
       <AudioControls
