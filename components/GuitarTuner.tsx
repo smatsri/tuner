@@ -2,7 +2,7 @@
 
 import { useCallback, useState, useEffect, useRef } from "react";
 import { useAudioContext } from "../hooks/useAudioContext";
-import { Peak, useFrequencyAnalyzer } from "../hooks/useFrequencyAnalyzer";
+import { findFundamentalFrequency, Peak } from "../utils/frequencyAnalysis";
 import { useTuner } from "../hooks/useTuner";
 import { TunerDisplay } from "./TunerDisplay";
 import { AudioControls } from "./AudioControls";
@@ -13,10 +13,6 @@ const GuitarTuner: React.FC = () => {
   const { isInitialized, audioContext, analyser, currentAudio, loadAudio } =
     useAudioContext();
 
-  const { findFundamentalFrequency } = useFrequencyAnalyzer(
-    audioContext,
-    analyser
-  );
   const { checkTuning } = useTuner();
 
   // Modified effect to handle frequency updates more reliably
@@ -27,7 +23,10 @@ const GuitarTuner: React.FC = () => {
     const updateFrequency = () => {
       if (!isRunning) return;
 
-      const [peaks, newFrequency] = findFundamentalFrequency();
+      const [peaks, newFrequency] = findFundamentalFrequency(
+        audioContext,
+        analyser
+      );
       if (newFrequency !== frequency) {
         setFrequency(newFrequency);
       }
