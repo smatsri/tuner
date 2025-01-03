@@ -28,7 +28,6 @@ const GuitarTuner: React.FC = () => {
       if (!isRunning) return;
 
       const [peaks, newFrequency] = findFundamentalFrequency();
-      console.log("peaks", peaks);
       if (newFrequency !== frequency) {
         setFrequency(newFrequency);
       }
