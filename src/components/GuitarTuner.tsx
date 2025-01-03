@@ -1,5 +1,3 @@
-"use client";
-
 import { useCallback, useState, useEffect, useRef } from "react";
 import { useAudioContext } from "../hooks/useAudioContext";
 import { findFundamentalFrequency, Peak } from "../utils/frequencyAnalysis";
