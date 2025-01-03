@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useAudioContext } from "../hooks/useAudioContext";
 import { useFrequencyAnalyzer } from "../hooks/useFrequencyAnalyzer";
 import { useTuner } from "../hooks/useTuner";
@@ -8,13 +8,58 @@ import { TunerDisplay } from "./TunerDisplay";
 import { AudioControls } from "./AudioControls";
 
 const GuitarTuner: React.FC = () => {
+  const [frequency, setFrequency] = useState(0);
   const { isInitialized, audioContext, analyser, currentAudio, loadAudio } =
     useAudioContext();
+
   const { findFundamentalFrequency, lastPeaks } = useFrequencyAnalyzer(
     audioContext,
     analyser
   );
   const { checkTuning } = useTuner();
+
+  // Modified effect to handle frequency updates more reliably
+  useEffect(() => {
+    let animationFrameId: number;
+    let isRunning = false;
+
+    const updateFrequency = () => {
+      if (!isRunning) return;
+
+      const newFrequency = findFundamentalFrequency();
+      if (newFrequency !== frequency) {
+        setFrequency(newFrequency);
+      }
+      animationFrameId = requestAnimationFrame(updateFrequency);
+    };
+
+    if (isInitialized && currentAudio && !currentAudio.paused) {
+      isRunning = true;
+      updateFrequency();
+    }
+
+    return () => {
+      isRunning = false;
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [isInitialized, currentAudio, findFundamentalFrequency, frequency]);
+
+  // Add event listeners for audio state changes
+  useEffect(() => {
+    if (!currentAudio) return;
+
+    const handlePlay = () => {
+      setFrequency(0); // Reset frequency when starting new audio
+    };
+
+    currentAudio.addEventListener("play", handlePlay);
+
+    return () => {
+      currentAudio.removeEventListener("play", handlePlay);
+    };
+  }, [currentAudio]);
 
   const handleFileChange = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,13 +89,12 @@ const GuitarTuner: React.FC = () => {
     [loadAudio]
   );
 
-  const currentFrequency = findFundamentalFrequency();
-  const tuningResult = checkTuning(currentFrequency);
+  const tuningResult = checkTuning(frequency); // Use state frequency instead of direct calculation
 
   return (
-    <div className="audio-visualizer">
+    <div className="guitar-tuner">
       <TunerDisplay
-        frequency={currentFrequency}
+        frequency={frequency}
         isInitialized={isInitialized}
         currentAudio={currentAudio}
         tuningResult={tuningResult}
@@ -63,7 +107,7 @@ const GuitarTuner: React.FC = () => {
       />
 
       <style jsx>{`
-        .audio-visualizer {
+        .guitar-tuner {
           display: flex;
           flex-direction: column;
           align-items: center;
