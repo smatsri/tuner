@@ -1,4 +1,4 @@
-import { GUITAR_NOTES } from "@/utils/tuner";
+import { GUITAR_NOTES } from "../utils/tuner";
 
 interface AudioControlsProps {
   onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -32,7 +32,7 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
         ))}
       </div>
 
-      <style jsx>{`
+      <style>{`
         .file-input-container {
           margin: 20px 0;
         }
