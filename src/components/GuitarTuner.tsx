@@ -23,6 +23,7 @@ const GuitarTuner: React.FC = () => {
     let animationFrameId: number;
     let isRunning = false;
 
+    // TODO: only update frequency if mic is active or audio is playing
     const updateFrequency = () => {
       if (!isRunning || !analyser) return;
 
@@ -120,6 +121,7 @@ const GuitarTuner: React.FC = () => {
         frequency={frequency}
         isInitialized={isInitialized}
         currentAudio={currentAudio}
+        micIsActive={micIsActive}
         tuningResult={tuningResult}
         lastPeaks={peaksRef.current}
       />

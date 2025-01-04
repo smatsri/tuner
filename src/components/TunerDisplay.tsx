@@ -8,6 +8,7 @@ interface TunerDisplayProps {
   currentAudio: HTMLAudioElement | null;
   tuningResult: TuningResult;
   lastPeaks: Peak[] | null;
+  micIsActive: boolean;
 }
 
 export const TunerDisplay: React.FC<TunerDisplayProps> = ({
@@ -16,6 +17,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
   currentAudio,
   tuningResult,
   lastPeaks,
+  micIsActive,
 }) => {
   const width = 800;
   const height = 400;
@@ -40,7 +42,8 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
         {/* Background */}
         <Rect width={width} height={height} fill="rgb(200, 200, 200)" />
 
-        {isInitialized && currentAudio && !currentAudio.paused ? (
+        {isInitialized &&
+        (currentAudio ? !currentAudio.paused || micIsActive : true) ? (
           <>
             {frequency > 0 ? (
               <>
@@ -56,7 +59,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
                 />
 
                 {/* Peak information */}
-                {lastPeaks && lastPeaks.length > 0 && (
+                {micIsActive && lastPeaks && lastPeaks.length > 0 && (
                   <>
                     <Text
                       text="Detected Peaks:"
@@ -113,7 +116,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
           </>
         ) : (
           <Text
-            text="Click a note button to begin"
+            text="Click a note button or enable microphone to begin"
             x={10}
             y={10}
             fontSize={24}
