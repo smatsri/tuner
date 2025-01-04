@@ -3,11 +3,15 @@ import { GUITAR_NOTES } from "../utils/tuner";
 interface AudioControlsProps {
   onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onNoteClick: (note: string, file: string) => void;
+  onMicToggle: () => void;
+  isMicActive: boolean;
 }
 
 export const AudioControls: React.FC<AudioControlsProps> = ({
   onFileChange,
   onNoteClick,
+  onMicToggle,
+  isMicActive,
 }) => {
   return (
     <>
@@ -31,6 +35,10 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
           </button>
         ))}
       </div>
+
+      <button onClick={onMicToggle} className="mic-button">
+        {isMicActive ? "Stop Mic" : "Start Mic"}
+      </button>
 
       <style>{`
         .file-input-container {
@@ -56,6 +64,16 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
 
         .note-button:hover {
           background-color: #e0e0e0;
+          }
+
+        .mic-button {
+          margin-top: 20px;
+          padding: 10px 20px;
+          font-size: 16px;
+          cursor: pointer;
+          background-color: #f0f0f0;
+          border: 1px solid #ccc;
+          border-radius: 4px;
         }
 
         .audio-file-input {

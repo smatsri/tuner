@@ -3,8 +3,12 @@ export interface Peak {
   amplitude: number;
 }
 
-export const findFundamentalFrequency = (audioContext: AudioContext | null, analyser: AnalyserNode | null): [Peak[], number] => {
+export const findFundamentalFrequency = (
+  audioContext: AudioContext | null,
+  analyser: AnalyserNode | null
+): [Peak[], number] => {
   if (!analyser || !audioContext) return [[], 0];
+  console.log("findFundamentalFrequency");
 
   const bufferLength = analyser.frequencyBinCount;
   const frequencyData = new Uint8Array(bufferLength);

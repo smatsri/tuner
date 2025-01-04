@@ -8,16 +8,23 @@ import { checkTuning } from "../utils/tuner";
 const GuitarTuner: React.FC = () => {
   const [frequency, setFrequency] = useState(0);
   const peaksRef = useRef<Peak[]>([]);
-  const { isInitialized, audioContext, analyser, currentAudio, loadAudio } =
-    useAudioContext();
+  const {
+    isInitialized,
+    audioContext,
+    analyser,
+    currentAudio,
+    loadAudio,
+    loadMicrophone,
+    micIsActive,
+  } = useAudioContext();
 
-  // Modified effect to handle frequency updates more reliably
+  // Modified effect to handle both microphone and audio file input
   useEffect(() => {
     let animationFrameId: number;
     let isRunning = false;
 
     const updateFrequency = () => {
-      if (!isRunning) return;
+      if (!isRunning || !analyser) return;
 
       const [peaks, newFrequency] = findFundamentalFrequency(
         audioContext,
@@ -30,7 +37,11 @@ const GuitarTuner: React.FC = () => {
       animationFrameId = requestAnimationFrame(updateFrequency);
     };
 
-    if (isInitialized && currentAudio && !currentAudio.paused) {
+    // Start frequency analysis if either mic is active or audio is playing
+    if (
+      isInitialized &&
+      (micIsActive || (currentAudio && !currentAudio.paused))
+    ) {
       isRunning = true;
       updateFrequency();
     }
@@ -41,7 +52,14 @@ const GuitarTuner: React.FC = () => {
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [isInitialized, currentAudio, findFundamentalFrequency, frequency]);
+  }, [
+    isInitialized,
+    currentAudio,
+    audioContext,
+    analyser,
+    frequency,
+    micIsActive,
+  ]);
 
   // Add event listeners for audio state changes
   useEffect(() => {
@@ -86,6 +104,14 @@ const GuitarTuner: React.FC = () => {
     [loadAudio]
   );
 
+  const handleMicToggle = useCallback(async () => {
+    if (currentAudio) {
+      currentAudio.pause();
+    }
+    await loadMicrophone();
+    setFrequency(0); // Reset frequency when switching to mic
+  }, [loadMicrophone, currentAudio]);
+
   const tuningResult = checkTuning(frequency); // Use state frequency instead of direct calculation
 
   return (
@@ -101,6 +127,8 @@ const GuitarTuner: React.FC = () => {
       <AudioControls
         onFileChange={handleFileChange}
         onNoteClick={handleNoteClick}
+        onMicToggle={handleMicToggle}
+        isMicActive={micIsActive}
       />
 
       <style>{`
