@@ -4,7 +4,7 @@ export interface AudioContextState {
   audioContext: AudioContext | null;
   analyser: AnalyserNode | null;
   currentAudio: HTMLAudioElement | null;
-  sourceNode: MediaElementAudioSourceNode | null;
+  sourceNode: MediaElementAudioSourceNode | MediaStreamAudioSourceNode | null;
   isInitialized: boolean;
 }
 
@@ -14,45 +14,26 @@ export const useAudioContext = (fftSize: number = 32768) => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
-  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const micStreamRef = useRef<MediaStream | null>(null);
-  const [microphoneStream, setMicrophoneStream] = useState<MediaStream | null>(
-    null
-  );
-  const [micIsActive, setMicIsActive] = useState<boolean>(false);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | MediaStreamAudioSourceNode | null>(null);
+  const [isMicLoaded, setIsMicLoaded] = useState<boolean>(false);
 
   const init = () => {
-    // Clean up existing microphone stream if it exists
-    if (micStreamRef.current) {
-      micStreamRef.current.getTracks().forEach((track) => track.stop());
-      micStreamRef.current = null;
-      setMicrophoneStream(null);
-      setMicIsActive(false);
+
+    if (!audioContextRef.current) {
+      const ctx = new AudioContext();
+      const analyser = ctx.createAnalyser();
+
+      analyser.fftSize = fftSize;
+      analyser.minDecibels = -90;
+      analyser.maxDecibels = -20;
+      analyser.smoothingTimeConstant = 0.85;
+
+      audioContextRef.current = ctx;
+      analyserRef.current = analyser;
+
+      setIsInitialized(true);
     }
-
-    // Clean up existing audio context and analyser
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
-      audioContextRef.current = null;
-    }
-    if (analyserRef.current) {
-      analyserRef.current.disconnect();
-      analyserRef.current = null;
-    }
-
-    // Create new audio context and analyser
-    const ctx = new AudioContext();
-    const analyser = ctx.createAnalyser();
-
-    analyser.fftSize = fftSize;
-    analyser.minDecibels = -90;
-    analyser.maxDecibels = -20;
-    analyser.smoothingTimeConstant = 0.85;
-
-    audioContextRef.current = ctx;
-    analyserRef.current = analyser;
-
-    setIsInitialized(true);
+    setIsMicLoaded(false);
   };
 
   const loadAudio = async (audioUrl: string): Promise<HTMLAudioElement> => {
@@ -85,8 +66,7 @@ export const useAudioContext = (fftSize: number = 32768) => {
       audio.addEventListener("error", (e) => {
         reject(
           new Error(
-            `Failed to load audio: ${
-              e instanceof ErrorEvent ? e.message : "Unknown error"
+            `Failed to load audio: ${e instanceof ErrorEvent ? e.message : "Unknown error"
             }`
           )
         );
@@ -97,42 +77,39 @@ export const useAudioContext = (fftSize: number = 32768) => {
     });
   };
 
-  const loadMicrophone = async () => {
-    try {
-      init();
-      if (!audioContextRef.current) return;
+  const loadFromMic = async (): Promise<void> => {
+    init();
+    setIsMicLoaded(true);
+    if (audioContextRef.current && analyserRef.current) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const source = audioContextRef.current.createMediaStreamSource(stream);
+        sourceNodeRef.current = source;
+        source.connect(analyserRef.current);
+        analyserRef.current.connect(audioContextRef.current.destination);
 
-      // If microphone is already active, stop it
-      if (microphoneStream) {
-        microphoneStream.getTracks().forEach((track) => track.stop());
-        setMicrophoneStream(null);
-        setMicIsActive(false);
-        return;
+        audioContextRef.current.resume();
+
+        setAudioState((prev) => prev + 1);
+      } catch (error) {
+        console.error("Failed to access microphone:", error);
       }
-
-      // Request microphone access
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      micStreamRef.current = stream;
-      setMicrophoneStream(stream);
-
-      // Connect microphone to audio context
-      const source = audioContextRef.current.createMediaStreamSource(stream);
-      source.connect(analyserRef.current!);
-      analyserRef.current!.connect(audioContextRef.current.destination);
-
-      setMicIsActive(true);
-      setAudioState((prev) => prev + 1);
-    } catch (error) {
-      console.error("Error accessing microphone:", error);
-      setMicIsActive(false);
+    } else {
+      console.error("Audio context or analyser not initialized");
     }
   };
 
-  const stopMicrophone = () => {
-    if (micStreamRef.current) {
-      micStreamRef.current.getTracks().forEach((track) => track.stop());
-      micStreamRef.current = null;
+  const stopMic = () => {
+    if (sourceNodeRef.current) {
+      sourceNodeRef.current.disconnect();
+
+      // Stop all tracks from the MediaStream
+      if (sourceNodeRef.current instanceof MediaStreamAudioSourceNode) {
+        const stream = sourceNodeRef.current.mediaStream;
+        stream.getTracks().forEach(track => track.stop());
+      }
     }
+    setIsMicLoaded(false);
   };
 
   return {
@@ -141,10 +118,13 @@ export const useAudioContext = (fftSize: number = 32768) => {
     analyser: analyserRef.current,
     currentAudio: currentAudioRef.current,
     sourceNode: sourceNodeRef.current,
+    isMicLoaded,
     loadAudio,
     loadMicrophone,
     stopMicrophone,
     micIsActive,
     init,
+    loadFromMic,
+    stopMic,
   };
 };

@@ -19,6 +19,15 @@ export const GUITAR_NOTES: Record<string, GuitarNote> = {
   E4: { freq: 329.63, file: "./audio/e4.mp3" },
 };
 
+export const MY_NOTES: Record<string, string> = {
+  E2: "./audio/my/e2.mp3",
+  A2: "./audio/my/a2.mp3",
+  D3: "./audio/my/d3.mp3",
+  G3: "./audio/my/g3.mp3",
+  B3: "./audio/my/b3.mp3",
+  E4: "./audio/my/e4.mp3",
+};
+
 export const checkTuning = (frequency: number, tuneTolerance = 2): TuningResult => {
   let closestNote: string | null = null;
   let smallestDifference = Infinity;
