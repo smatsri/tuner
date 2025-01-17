@@ -34,6 +34,8 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
     .sort((a, b) => Math.abs(a[1] - frequency) - Math.abs(b[1] - frequency))
     .slice(0, 3);
 
+  console.log("tuningResult", tuningResult);
+
   return (
     <Stage width={width} height={height}>
       <Layer>

@@ -13,16 +13,10 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
 }) => {
   return (
     <>
-      <div>
-        <div className="file-input-container">
-          <input
-            type="file"
-            accept="audio/*"
-            onChange={onFileChange}
-            className="audio-file-input"
-          />
-        </div>
+      <div className="mic-button-container">
+        <button onClick={handleLoadFromMic}>Use Microphone</button>
       </div>
+
       <div className="note-buttons-container">
         <div className="note-buttons-header">
           <h2>CorrectNotes</h2>
@@ -56,8 +50,15 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
           ))}
         </div>
       </div>
-      <div className="mic-button-container">
-        <button onClick={handleLoadFromMic}>Use Microphone</button>
+      <div>
+        <div className="file-input-container">
+          <input
+            type="file"
+            accept="audio/*"
+            onChange={onFileChange}
+            className="audio-file-input"
+          />
+        </div>
       </div>
 
       <style>{`

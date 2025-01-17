@@ -15,9 +15,12 @@ export const useAudioContext = (fftSize: number = 32768) => {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const sourceNodeRef = useRef<MediaElementAudioSourceNode | MediaStreamAudioSourceNode | null>(null);
+  const [isMicLoaded, setIsMicLoaded] = useState<boolean>(false);
 
   const init = () => {
+
     if (!audioContextRef.current) {
+      console.log("audioContextRef.current");
       const ctx = new AudioContext();
       const analyser = ctx.createAnalyser();
 
@@ -29,8 +32,10 @@ export const useAudioContext = (fftSize: number = 32768) => {
       audioContextRef.current = ctx;
       analyserRef.current = analyser;
 
+      console.log("setIsInitialized(true)");
       setIsInitialized(true);
     }
+    setIsMicLoaded(false);
   };
 
   const loadAudio = async (audioUrl: string): Promise<HTMLAudioElement> => {
@@ -76,20 +81,39 @@ export const useAudioContext = (fftSize: number = 32768) => {
 
   const loadFromMic = async (): Promise<void> => {
     init();
+    setIsMicLoaded(true);
     if (audioContextRef.current && analyserRef.current) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const source = audioContextRef.current.createMediaStreamSource(stream);
         sourceNodeRef.current = source;
-
         source.connect(analyserRef.current);
         analyserRef.current.connect(audioContextRef.current.destination);
+
+        audioContextRef.current.resume();
 
         setAudioState((prev) => prev + 1);
       } catch (error) {
         console.error("Failed to access microphone:", error);
       }
+    } else {
+      console.error("Audio context or analyser not initialized");
     }
+  };
+
+  const stopMic = () => {
+    console.log("stopMic");
+    if (sourceNodeRef.current) {
+      console.log("sourceNodeRef.current.disconnect()");
+      sourceNodeRef.current.disconnect();
+
+      // Stop all tracks from the MediaStream
+      if (sourceNodeRef.current instanceof MediaStreamAudioSourceNode) {
+        const stream = sourceNodeRef.current.mediaStream;
+        stream.getTracks().forEach(track => track.stop());
+      }
+    }
+    setIsMicLoaded(false);
   };
 
   return {
@@ -98,8 +122,10 @@ export const useAudioContext = (fftSize: number = 32768) => {
     analyser: analyserRef.current,
     currentAudio: currentAudioRef.current,
     sourceNode: sourceNodeRef.current,
+    isMicLoaded,
     loadAudio,
     init,
     loadFromMic,
+    stopMic,
   };
 };

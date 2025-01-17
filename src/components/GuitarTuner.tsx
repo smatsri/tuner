@@ -13,8 +13,10 @@ const GuitarTuner: React.FC = () => {
     audioContext,
     analyser,
     currentAudio,
+    isMicLoaded,
     loadAudio,
     loadFromMic,
+    stopMic,
   } = useAudioContext();
 
   // Modified effect to handle frequency updates more reliably
@@ -29,6 +31,7 @@ const GuitarTuner: React.FC = () => {
         audioContext,
         analyser
       );
+
       if (newFrequency !== frequency) {
         setFrequency(newFrequency);
       }
@@ -36,9 +39,14 @@ const GuitarTuner: React.FC = () => {
       animationFrameId = requestAnimationFrame(updateFrequency);
     };
 
-    if (isInitialized && currentAudio && !currentAudio.paused) {
+    if (
+      (isInitialized && currentAudio && !currentAudio.paused) ||
+      isMicLoaded
+    ) {
       isRunning = true;
       updateFrequency();
+    } else {
+      console.log("not initialized or audio paused", isMicLoaded);
     }
 
     return () => {
@@ -51,7 +59,7 @@ const GuitarTuner: React.FC = () => {
 
   // Add event listeners for audio state changes
   useEffect(() => {
-    if (!currentAudio) return;
+    if (!currentAudio || isMicLoaded) return;
 
     const handlePlay = () => {
       setFrequency(0); // Reset frequency when starting new audio
@@ -62,7 +70,7 @@ const GuitarTuner: React.FC = () => {
     return () => {
       currentAudio.removeEventListener("play", handlePlay);
     };
-  }, [currentAudio]);
+  }, [currentAudio, isMicLoaded]);
 
   const handleFileChange = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,6 +100,15 @@ const GuitarTuner: React.FC = () => {
     [loadAudio]
   );
 
+  const handleMicChange = useCallback(async () => {
+    console.log("handleMicChange", isMicLoaded);
+    if (isMicLoaded) {
+      stopMic();
+    } else {
+      await loadFromMic();
+    }
+  }, [loadFromMic, isMicLoaded]);
+
   const tuningResult = checkTuning(frequency); // Use state frequency instead of direct calculation
 
   return (
@@ -107,7 +124,7 @@ const GuitarTuner: React.FC = () => {
       <AudioControls
         onFileChange={handleFileChange}
         onNoteClick={handleNoteClick}
-        handleLoadFromMic={loadFromMic}
+        handleLoadFromMic={handleMicChange}
       />
 
       <style>{`
