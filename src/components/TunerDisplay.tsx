@@ -8,6 +8,7 @@ interface TunerDisplayProps {
   currentAudio: HTMLAudioElement | null;
   tuningResult: TuningResult;
   lastPeaks: Peak[] | null;
+  isMicLoaded: boolean;
 }
 
 export const TunerDisplay: React.FC<TunerDisplayProps> = ({
@@ -16,7 +17,9 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
   currentAudio,
   tuningResult,
   lastPeaks,
+  isMicLoaded,
 }) => {
+  console.log("TunerDisplay", frequency);
   const width = 800;
   const height = 400;
 
@@ -34,15 +37,14 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
     .sort((a, b) => Math.abs(a[1] - frequency) - Math.abs(b[1] - frequency))
     .slice(0, 3);
 
-  console.log("tuningResult", tuningResult);
-
   return (
     <Stage width={width} height={height}>
       <Layer>
         {/* Background */}
         <Rect width={width} height={height} fill="rgb(200, 200, 200)" />
 
-        {isInitialized && currentAudio && !currentAudio.paused ? (
+        {isInitialized &&
+        ((currentAudio && !currentAudio.paused) || isMicLoaded) ? (
           <>
             {frequency > 0 ? (
               <>

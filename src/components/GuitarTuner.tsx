@@ -8,6 +8,7 @@ import { checkTuning } from "../utils/tuner";
 const GuitarTuner: React.FC = () => {
   const [frequency, setFrequency] = useState(0);
   const peaksRef = useRef<Peak[]>([]);
+  const [, setState] = useState(0);
   const {
     isInitialized,
     audioContext,
@@ -119,6 +120,7 @@ const GuitarTuner: React.FC = () => {
         currentAudio={currentAudio}
         tuningResult={tuningResult}
         lastPeaks={peaksRef.current}
+        isMicLoaded={isMicLoaded}
       />
 
       <AudioControls
