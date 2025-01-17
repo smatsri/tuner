@@ -59,7 +59,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
                 />
 
                 {/* Peak information */}
-                {lastPeaks && lastPeaks.length > 0 && (
+                {micIsActive && lastPeaks && lastPeaks.length > 0 && (
                   <>
                     <Text
                       text="Detected Peaks:"
@@ -116,7 +116,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
           </>
         ) : (
           <Text
-            text="Click a note button to begin"
+            text="Click a note button or enable microphone to begin"
             x={10}
             y={10}
             fontSize={24}

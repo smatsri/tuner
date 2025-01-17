@@ -20,13 +20,14 @@ const GuitarTuner: React.FC = () => {
     stopMic,
   } = useAudioContext();
 
-  // Modified effect to handle frequency updates more reliably
+  // Modified effect to handle both microphone and audio file input
   useEffect(() => {
     let animationFrameId: number;
     let isRunning = false;
 
+    // TODO: only update frequency if mic is active or audio is playing
     const updateFrequency = () => {
-      if (!isRunning) return;
+      if (!isRunning || !analyser) return;
 
       const [peaks, newFrequency] = findFundamentalFrequency(
         audioContext,
@@ -54,7 +55,14 @@ const GuitarTuner: React.FC = () => {
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [isInitialized, currentAudio, findFundamentalFrequency, frequency]);
+  }, [
+    isInitialized,
+    currentAudio,
+    audioContext,
+    analyser,
+    frequency,
+    micIsActive,
+  ]);
 
   // Add event listeners for audio state changes
   useEffect(() => {
@@ -115,6 +123,7 @@ const GuitarTuner: React.FC = () => {
         frequency={frequency}
         isInitialized={isInitialized}
         currentAudio={currentAudio}
+        micIsActive={micIsActive}
         tuningResult={tuningResult}
         lastPeaks={peaksRef.current}
         isMicLoaded={isMicLoaded}
