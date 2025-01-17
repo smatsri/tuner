@@ -4,7 +4,7 @@ export interface AudioContextState {
   audioContext: AudioContext | null;
   analyser: AnalyserNode | null;
   currentAudio: HTMLAudioElement | null;
-  sourceNode: MediaElementAudioSourceNode | null;
+  sourceNode: MediaElementAudioSourceNode | MediaStreamAudioSourceNode | null;
   isInitialized: boolean;
 }
 
@@ -14,7 +14,7 @@ export const useAudioContext = (fftSize: number = 32768) => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
-  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | MediaStreamAudioSourceNode | null>(null);
 
   const init = () => {
     if (!audioContextRef.current) {
@@ -63,8 +63,7 @@ export const useAudioContext = (fftSize: number = 32768) => {
       audio.addEventListener("error", (e) => {
         reject(
           new Error(
-            `Failed to load audio: ${
-              e instanceof ErrorEvent ? e.message : "Unknown error"
+            `Failed to load audio: ${e instanceof ErrorEvent ? e.message : "Unknown error"
             }`
           )
         );
@@ -75,6 +74,24 @@ export const useAudioContext = (fftSize: number = 32768) => {
     });
   };
 
+  const loadFromMic = async (): Promise<void> => {
+    init();
+    if (audioContextRef.current && analyserRef.current) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const source = audioContextRef.current.createMediaStreamSource(stream);
+        sourceNodeRef.current = source;
+
+        source.connect(analyserRef.current);
+        analyserRef.current.connect(audioContextRef.current.destination);
+
+        setAudioState((prev) => prev + 1);
+      } catch (error) {
+        console.error("Failed to access microphone:", error);
+      }
+    }
+  };
+
   return {
     isInitialized,
     audioContext: audioContextRef.current,
@@ -83,5 +100,6 @@ export const useAudioContext = (fftSize: number = 32768) => {
     sourceNode: sourceNodeRef.current,
     loadAudio,
     init,
+    loadFromMic,
   };
 };

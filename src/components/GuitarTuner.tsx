@@ -8,8 +8,14 @@ import { checkTuning } from "../utils/tuner";
 const GuitarTuner: React.FC = () => {
   const [frequency, setFrequency] = useState(0);
   const peaksRef = useRef<Peak[]>([]);
-  const { isInitialized, audioContext, analyser, currentAudio, loadAudio } =
-    useAudioContext();
+  const {
+    isInitialized,
+    audioContext,
+    analyser,
+    currentAudio,
+    loadAudio,
+    loadFromMic,
+  } = useAudioContext();
 
   // Modified effect to handle frequency updates more reliably
   useEffect(() => {
@@ -102,6 +108,8 @@ const GuitarTuner: React.FC = () => {
         onFileChange={handleFileChange}
         onNoteClick={handleNoteClick}
       />
+
+      <button onClick={loadFromMic}>Use Microphone</button>
 
       <style>{`
         .guitar-tuner {
