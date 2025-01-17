@@ -8,7 +8,7 @@ import { checkTuning } from "../utils/tuner";
 const GuitarTuner: React.FC = () => {
   const [frequency, setFrequency] = useState(0);
   const peaksRef = useRef<Peak[]>([]);
-  const [, setState] = useState(0);
+
   const {
     isInitialized,
     audioContext,
@@ -46,8 +46,6 @@ const GuitarTuner: React.FC = () => {
     ) {
       isRunning = true;
       updateFrequency();
-    } else {
-      console.log("not initialized or audio paused", isMicLoaded);
     }
 
     return () => {
@@ -102,7 +100,6 @@ const GuitarTuner: React.FC = () => {
   );
 
   const handleMicChange = useCallback(async () => {
-    console.log("handleMicChange", isMicLoaded);
     if (isMicLoaded) {
       stopMic();
     } else {

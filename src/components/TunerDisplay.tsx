@@ -19,7 +19,6 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
   lastPeaks,
   isMicLoaded,
 }) => {
-  console.log("TunerDisplay", frequency);
   const width = 800;
   const height = 400;
 

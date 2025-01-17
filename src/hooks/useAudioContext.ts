@@ -20,7 +20,6 @@ export const useAudioContext = (fftSize: number = 32768) => {
   const init = () => {
 
     if (!audioContextRef.current) {
-      console.log("audioContextRef.current");
       const ctx = new AudioContext();
       const analyser = ctx.createAnalyser();
 
@@ -32,7 +31,6 @@ export const useAudioContext = (fftSize: number = 32768) => {
       audioContextRef.current = ctx;
       analyserRef.current = analyser;
 
-      console.log("setIsInitialized(true)");
       setIsInitialized(true);
     }
     setIsMicLoaded(false);
@@ -102,9 +100,7 @@ export const useAudioContext = (fftSize: number = 32768) => {
   };
 
   const stopMic = () => {
-    console.log("stopMic");
     if (sourceNodeRef.current) {
-      console.log("sourceNodeRef.current.disconnect()");
       sourceNodeRef.current.disconnect();
 
       // Stop all tracks from the MediaStream
