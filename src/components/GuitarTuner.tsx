@@ -107,9 +107,8 @@ const GuitarTuner: React.FC = () => {
       <AudioControls
         onFileChange={handleFileChange}
         onNoteClick={handleNoteClick}
+        handleLoadFromMic={loadFromMic}
       />
-
-      <button onClick={loadFromMic}>Use Microphone</button>
 
       <style>{`
         .guitar-tuner {
