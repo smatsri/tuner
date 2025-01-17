@@ -61,7 +61,7 @@ const GuitarTuner: React.FC = () => {
     audioContext,
     analyser,
     frequency,
-    micIsActive,
+    isMicLoaded,
   ]);
 
   // Add event listeners for audio state changes
@@ -123,10 +123,9 @@ const GuitarTuner: React.FC = () => {
         frequency={frequency}
         isInitialized={isInitialized}
         currentAudio={currentAudio}
-        micIsActive={micIsActive}
+        isMicLoaded={isMicLoaded}
         tuningResult={tuningResult}
         lastPeaks={peaksRef.current}
-        isMicLoaded={isMicLoaded}
       />
 
       <AudioControls

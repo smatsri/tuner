@@ -59,7 +59,7 @@ export const TunerDisplay: React.FC<TunerDisplayProps> = ({
                 />
 
                 {/* Peak information */}
-                {micIsActive && lastPeaks && lastPeaks.length > 0 && (
+                {isMicLoaded && lastPeaks && lastPeaks.length > 0 && (
                   <>
                     <Text
                       text="Detected Peaks:"
